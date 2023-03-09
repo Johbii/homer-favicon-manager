@@ -47,9 +47,3 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Keep latest 3 images
-        uses: actions/delete-package-versions@ba4d22f25141387e5ab82cfec079de6d2df96815
-        with:
-          min-versions-to-keep: 3
-          package-type: container
-          package-name: ${{ env.IMAGE_NAME }}
