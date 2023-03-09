@@ -1,0 +1,21 @@
+version: "3"
+services:
+  favicon-manager:
+    build:
+      context: .
+    environment:
+      VERIFY_SSL: 0
+    volumes:
+      - ./vol/config.yml:/www/assets/config.yml
+      - ./vol/managed:/www/assets/managed
+      - ./vol/source/config.yml:/www/assets/source/config.yml
+  homer:
+    image: b4bz/homer:v23.02.2
+    volumes:
+      - ./vol/config.yml:/www/assets/config.yml
+      - ./vol/managed:/www/assets/managed
+    ports:
+      - 8080:8080
+    user: 1000:1000
+    environment:
+      - INIT_ASSETS=0
