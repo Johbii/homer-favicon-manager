@@ -54,51 +54,6 @@ class GracefulKiller:
         self.kill_now = True
 
 
-def parse_arguments() -> argparse.Namespace:
-    parser: argparse.ArgumentParser = argparse.ArgumentParser()
-    parser.add_argument(
-        "-c",
-        "--config",
-        type=str,
-        default="/www/assets/source/config.yml",
-        help="path to homer config file",
-    )
-    parser.add_argument(
-        "-d",
-        "--workdir",
-        type=str,
-        default="/www/assets/managed",
-        help="path to managed work directory",
-    )
-    parser.add_argument(
-        "-o",
-        "--output",
-        type=str,
-        default="/www",
-        help="path to managed config file output",
-    )
-    parser.add_argument(
-        "-D",
-        "--daemon",
-        type=int,
-        choices=[0, 1],
-        default=1,
-        help="controls whether to enable daemon mode for watching config changes",
-    )
-    parser.add_argument(
-        "--verify-ssl",
-        type=int,
-        choices=[0, 1],
-        default=1,
-        help="""Verify certificates for HTTPS connections. Certificate verification is strongly
-        advised""",
-    )
-
-    args: argparse.Namespace = parser.parse_args()
-
-    return args
-
-
 class UpdateWorker:
     def __init__(
         self,
@@ -261,33 +216,19 @@ class ConfigHandler(FileSystemEventHandler):
             self.update_worker.run()
 
 
-def read_yaml(path: str) -> dict:
-    with open(path, "r", encoding="utf-8") as stream:
-        return yaml.safe_load(stream)
-
-
-def find_icons(url: str, timeout_seconds: float, verify_ssl: bool) -> list[favicon.Icon]:
+def clear_workdir(workdir: str) -> None:
+    # If subdirectory is found in work directory, halt deletion, otherwise continue
     try:
-        icons: list[favicon.Icon] = favicon.get(
-            url, timeout=timeout_seconds, verify=bool(verify_ssl)
-        )
-    except requests.exceptions.ConnectionError as exc:
-        logging.error(exc)
-        return []
+        subdirs: list[str] = next(os.walk(workdir, topdown=True, followlinks=False))[1]
+        if subdirs:
+            raise UnexpectedItemInManagedWorkdir(subdirs[0])
+    except StopIteration:
+        pass
 
-    return icons
-
-
-def slugify(string: str) -> str:
-    string = string.lower()
-    # unify separators -> "_"
-    string = re.sub(r"[ -.,;\"'&|/\\]", "_", string)
-    # remove stacked separators e.g. "___" -> "_"
-    string = re.sub(r"_{2,}", "_", string)
-    # remove remaining invalid characters
-    string = re.sub(r"[^a-z0-9_]", "", string)
-
-    return string
+    with os.scandir(workdir) as scandir:
+        for item in scandir:
+            if item.is_file():
+                os.remove(item.path)
 
 
 def download_binary(url: str, path: str, timeout_seconds: float, verify_ssl: bool) -> bool:
@@ -309,6 +250,85 @@ def download_binary(url: str, path: str, timeout_seconds: float, verify_ssl: boo
     return True
 
 
+def dump_yaml(config: dict, path: str) -> None:
+    with open(path, "w", encoding="utf-8") as stream:
+        yaml.safe_dump(config, stream)
+
+
+def find_icons(url: str, timeout_seconds: float, verify_ssl: bool) -> list[favicon.Icon]:
+    try:
+        icons: list[favicon.Icon] = favicon.get(
+            url, timeout=timeout_seconds, verify=bool(verify_ssl)
+        )
+    except requests.exceptions.ConnectionError as exc:
+        logging.error(exc)
+        return []
+
+    return icons
+
+
+def parse_arguments() -> argparse.Namespace:
+    parser: argparse.ArgumentParser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-c",
+        "--config",
+        type=str,
+        default="/www/assets/source/config.yml",
+        help="path to homer config file",
+    )
+    parser.add_argument(
+        "-d",
+        "--workdir",
+        type=str,
+        default="/www/assets/managed",
+        help="path to managed work directory",
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        default="/www",
+        help="path to managed config file output",
+    )
+    parser.add_argument(
+        "-D",
+        "--daemon",
+        type=int,
+        choices=[0, 1],
+        default=1,
+        help="controls whether to enable daemon mode for watching config changes",
+    )
+    parser.add_argument(
+        "--verify-ssl",
+        type=int,
+        choices=[0, 1],
+        default=1,
+        help="""Verify certificates for HTTPS connections. Certificate verification is strongly
+        advised""",
+    )
+
+    args: argparse.Namespace = parser.parse_args()
+
+    return args
+
+
+def read_yaml(path: str) -> dict:
+    with open(path, "r", encoding="utf-8") as stream:
+        return yaml.safe_load(stream)
+
+
+def slugify(string: str) -> str:
+    string = string.lower()
+    # unify separators -> "_"
+    string = re.sub(r"[ -.,;\"'&|/\\]", "_", string)
+    # remove stacked separators e.g. "___" -> "_"
+    string = re.sub(r"_{2,}", "_", string)
+    # remove remaining invalid characters
+    string = re.sub(r"[^a-z0-9_]", "", string)
+
+    return string
+
+
 def test_url_is_image(url: str, timeout_seconds: float, verify_ssl: bool) -> bool:
     image_formats: list[str] = ["image/png", "image/apng", "image/webp", "image/x-icon"]
 
@@ -320,32 +340,6 @@ def test_url_is_image(url: str, timeout_seconds: float, verify_ssl: bool) -> boo
         return True
     else:
         return False
-
-
-def dump_yaml(config: dict, path: str) -> None:
-    with open(path, "w", encoding="utf-8") as stream:
-        yaml.safe_dump(config, stream)
-
-
-def clear_workdir(workdir: str) -> None:
-    # If subdirectory is found in work directory, halt deletion, otherwise continue
-    try:
-        subdirs: list[str] = next(os.walk(workdir, topdown=True, followlinks=False))[1]
-        if subdirs:
-            raise UnexpectedItemInManagedWorkdir(subdirs[0])
-    except StopIteration:
-        pass
-
-    with os.scandir(workdir) as scandir:
-        for item in scandir:
-            if item.is_file():
-                os.remove(item.path)
-
-
-def test_is_child(path: str, parent_path: str) -> bool:
-    if os.path.commonpath([parent_path, path]) == parent_path:
-        return True
-    return False
 
 
 def main() -> None:
