@@ -196,7 +196,7 @@ class ConfigHandler(FileSystemEventHandler):
         if os.path.basename(event.src_path) != name:
             return
 
-        logging.info("%s : %s", event.event_type, event.src_path)
+        logging.debug("%s : %s", event.event_type, event.src_path)
 
         self.update_worker.run()
 
@@ -213,7 +213,7 @@ class ConfigHandler(FileSystemEventHandler):
         if str(event.src_path).find("~") == -1 and (current_time - self.last_trigger_time) > 1:
             self.last_trigger_time = current_time
 
-            logging.info("%s : %s", event.event_type, event.src_path)
+            logging.debug("%s : %s", event.event_type, event.src_path)
 
             self.update_worker.run()
 
@@ -234,7 +234,7 @@ def clear_workdir(workdir: str) -> None:
 
 
 def download_binary(url: str, path: str, timeout_seconds: float, verify_ssl: bool) -> bool:
-    logging.info("Downloading %s to %s", url, path)
+    logging.debug("Downloading %s to %s", url, path)
 
     response: requests.Response = requests.get(
         url, timeout=timeout_seconds, stream=True, verify=bool(verify_ssl)
@@ -307,6 +307,13 @@ def parse_arguments() -> argparse.Namespace:
         default=1,
         help="verify certificates for HTTPS connections",
     )
+    parser.add_argument(
+        "--debug",
+        type=int,
+        choices=[0, 1],
+        default=0,
+        help="enable or disable debug mode",
+    )
 
     args: argparse.Namespace = parser.parse_args()
 
@@ -344,17 +351,22 @@ def test_url_is_image(url: str, timeout_seconds: float, verify_ssl: bool) -> boo
 
 
 def main() -> None:
+    args: argparse.Namespace = parse_arguments()
+
+    if bool(args.debug):
+        log_level: int = logging.DEBUG
+    else:
+        log_level: int = logging.INFO
+
     logging.basicConfig(
-        level=logging.INFO,
+        level=log_level,
         format="%(asctime)s %(levelname)s: %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 
     killer: GracefulKiller = GracefulKiller()
 
-    args: argparse.Namespace = parse_arguments()
-
-    logging.info("Using args: %s", args)
+    logging.debug("Using args: %s", args)
 
     if not bool(args.verify_ssl):
         # spam warnings -> 1 warning

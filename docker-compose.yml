@@ -5,6 +5,7 @@ services:
       context: .
     environment:
       VERIFY_SSL: 0
+      DEBUG: 1
     volumes:
       - ./vol/config.yml:/www/assets/config.yml
       - ./vol/managed:/www/assets/managed
