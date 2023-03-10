@@ -305,8 +305,7 @@ def parse_arguments() -> argparse.Namespace:
         type=int,
         choices=[0, 1],
         default=1,
-        help="""Verify certificates for HTTPS connections. Certificate verification is strongly
-        advised""",
+        help="verify certificates for HTTPS connections",
     )
 
     args: argparse.Namespace = parser.parse_args()
@@ -358,7 +357,9 @@ def main() -> None:
     logging.info("Using args: %s", args)
 
     if not bool(args.verify_ssl):
+        # spam warnings -> 1 warning
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+        logging.warning("SSL verification disabled, certificate verification is strongly advised")
 
     worker: UpdateWorker = UpdateWorker(args)
     worker.run()
