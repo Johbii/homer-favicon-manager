@@ -36,7 +36,7 @@ class UnexpectedItemInManagedWorkdir(Exception):
 class UpdateKillnowTimeout(Exception):
     def __init__(
         self,
-        message: str = "Timeout value exceeded waiting for thread to die.",
+        message: str = "Timeout value exceeded waiting for thread to die",
     ) -> None:
         self.message: str = message
         super().__init__(self.message)
@@ -80,7 +80,7 @@ class UpdateWorker:
                 thread.join(self.threads_stop_timeout_seconds)
 
                 if thread.is_alive():
-                    logging.error("Stop timeout exceeded. Falling back to killnow flag.")
+                    logging.error("Stop timeout exceeded. Falling back to killnow flag")
                     self.threads_killnow_flag.set()
                 else:
                     return
@@ -132,6 +132,8 @@ class UpdateWorker:
 
         if data != output_data:
             dump_yaml(data, output_config)
+
+        logging.info("Finished update")
 
     def update_service(self, service: dict[str, str]) -> None:
         icons: list[favicon.Icon] = find_icons(service["url"], 2.0, self.named_args.verify_ssl)
