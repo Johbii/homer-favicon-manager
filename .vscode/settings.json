@@ -4,9 +4,12 @@
         "editor.formatOnSave": true,
         "editor.codeActionsOnSave": {
             "source.organizeImports": true
-        },
+        }
     },
-    "isort.args":["--profile", "black"],
+    "isort.args": [
+        "--profile",
+        "black"
+    ],
     "python.analysis.typeCheckingMode": "basic",
     "python.linting.enabled": true,
     "python.linting.pylintEnabled": true,

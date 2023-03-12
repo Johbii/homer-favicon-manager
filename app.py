@@ -106,7 +106,7 @@ class UpdateWorker:
 
         clear_workdir(self.named_args.workdir)
 
-        output_config: str = os.path.join(self.named_args.output, "assets/config.yml")
+        output_config: str = os.path.join(self.named_args.output, "config.yml")
 
         data: dict = read_yaml(self.named_args.config)
         output_data: dict = read_yaml(output_config)
@@ -171,7 +171,9 @@ class UpdateWorker:
             validated_icon.url, path, 2.0, self.named_args.verify_ssl
         )
         if download_successful:
-            relpath: str = os.path.relpath(path, start=self.named_args.output)
+            relpath: str = os.path.join(
+                "assets", os.path.relpath(path, start=self.named_args.output)
+            )
             service["logo"] = relpath
 
 
@@ -275,21 +277,21 @@ def parse_arguments() -> argparse.Namespace:
         "-c",
         "--config",
         type=str,
-        default="/www/assets/source/config.yml",
+        default="/data/source/config.yml",
         help="path to homer config file",
     )
     parser.add_argument(
         "-d",
         "--workdir",
         type=str,
-        default="/www/assets/managed",
+        default="/data/managed",
         help="path to managed work directory",
     )
     parser.add_argument(
         "-o",
         "--output",
         type=str,
-        default="/www",
+        default="/data",
         help="path to managed config file output",
     )
     parser.add_argument(
