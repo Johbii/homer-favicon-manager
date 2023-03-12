@@ -1,2 +1,3 @@
 .venv
 vol/
+.vscode/settings.json

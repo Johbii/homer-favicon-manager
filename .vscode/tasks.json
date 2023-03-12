@@ -12,8 +12,6 @@
                 "pull": true
             },
             "presentation": {
-                "reveal": "silent",
-                "revealProblems": "onProblem",
                 "close": true
             }
         },
@@ -40,8 +38,6 @@
                 ]
             },
             "presentation": {
-                "reveal": "silent",
-                "revealProblems": "onProblem",
                 "close": true
             }
         },
@@ -63,8 +59,6 @@
                 ]
             },
             "presentation": {
-                "reveal": "silent",
-                "revealProblems": "onProblem",
                 "close": true
             }
         },
@@ -78,8 +72,6 @@
                 ]
             },
             "presentation": {
-                "reveal": "silent",
-                "revealProblems": "onProblem",
                 "close": true
             }
         },
@@ -87,12 +79,7 @@
             "type": "shell",
             "label": "wait for debug",
             "dependsOn": "docker-compose up: debug",
-            "command": "sleep 5",
-            "presentation": {
-                "reveal": "silent",
-                "revealProblems": "onProblem",
-                "close": true
-            }
+            "command": "sleep 5"
         }
     ]
 }
