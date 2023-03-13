@@ -1,0 +1,32 @@
+version: "3.4"
+services:
+  favicon-manager:
+    image: homer-favicon-manager
+    build:
+      context: .
+    command: >
+        sh -c "pip install debugpy -t /tmp
+        && python /tmp/debugpy
+        --wait-for-client
+        --listen 0.0.0.0:5678 app.py
+        --config=/data/source/config.yml
+        --workdir=/data/managed
+        --output=/data
+        --daemon=$${DAEMON_ENABLED}
+        --verify-ssl=$${VERIFY_SSL}
+        --debug=1"
+    ports:
+        - 5678:5678
+    environment:
+      VERIFY_SSL: 0
+    volumes:
+      - ./vol:/data
+  homer:
+    image: b4bz/homer:v23.02.2
+    volumes:
+      - ./vol:/www/assets
+    ports:
+      - 8080:8080
+    user: 1000:1000
+    environment:
+      - INIT_ASSETS=0

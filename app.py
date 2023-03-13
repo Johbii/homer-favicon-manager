@@ -36,7 +36,7 @@ class UnexpectedItemInManagedWorkdir(Exception):
 class UpdateKillnowTimeout(Exception):
     def __init__(
         self,
-        message: str = "Timeout value exceeded waiting for thread to die.",
+        message: str = "Timeout value exceeded waiting for thread to die",
     ) -> None:
         self.message: str = message
         super().__init__(self.message)
@@ -80,7 +80,7 @@ class UpdateWorker:
                 thread.join(self.threads_stop_timeout_seconds)
 
                 if thread.is_alive():
-                    logging.error("Stop timeout exceeded. Falling back to killnow flag.")
+                    logging.error("Stop timeout exceeded. Falling back to killnow flag")
                     self.threads_killnow_flag.set()
                 else:
                     return
@@ -106,7 +106,7 @@ class UpdateWorker:
 
         clear_workdir(self.named_args.workdir)
 
-        output_config: str = os.path.join(self.named_args.output, "assets/config.yml")
+        output_config: str = os.path.join(self.named_args.output, "config.yml")
 
         data: dict = read_yaml(self.named_args.config)
         output_data: dict = read_yaml(output_config)
@@ -132,6 +132,8 @@ class UpdateWorker:
 
         if data != output_data:
             dump_yaml(data, output_config)
+
+        logging.info("Finished update")
 
     def update_service(self, service: dict[str, str]) -> None:
         icons: list[favicon.Icon] = find_icons(service["url"], 2.0, self.named_args.verify_ssl)
@@ -169,7 +171,9 @@ class UpdateWorker:
             validated_icon.url, path, 2.0, self.named_args.verify_ssl
         )
         if download_successful:
-            relpath: str = os.path.relpath(path, start=self.named_args.output)
+            relpath: str = os.path.join(
+                "assets", os.path.relpath(path, start=self.named_args.output)
+            )
             service["logo"] = relpath
 
 
@@ -194,7 +198,7 @@ class ConfigHandler(FileSystemEventHandler):
         if os.path.basename(event.src_path) != name:
             return
 
-        logging.info("%s : %s", event.event_type, event.src_path)
+        logging.debug("%s : %s", event.event_type, event.src_path)
 
         self.update_worker.run()
 
@@ -211,7 +215,7 @@ class ConfigHandler(FileSystemEventHandler):
         if str(event.src_path).find("~") == -1 and (current_time - self.last_trigger_time) > 1:
             self.last_trigger_time = current_time
 
-            logging.info("%s : %s", event.event_type, event.src_path)
+            logging.debug("%s : %s", event.event_type, event.src_path)
 
             self.update_worker.run()
 
@@ -232,7 +236,7 @@ def clear_workdir(workdir: str) -> None:
 
 
 def download_binary(url: str, path: str, timeout_seconds: float, verify_ssl: bool) -> bool:
-    logging.info("Downloading %s to %s", url, path)
+    logging.debug("Downloading %s to %s", url, path)
 
     response: requests.Response = requests.get(
         url, timeout=timeout_seconds, stream=True, verify=bool(verify_ssl)
@@ -273,21 +277,21 @@ def parse_arguments() -> argparse.Namespace:
         "-c",
         "--config",
         type=str,
-        default="/www/assets/source/config.yml",
+        default="/data/source/config.yml",
         help="path to homer config file",
     )
     parser.add_argument(
         "-d",
         "--workdir",
         type=str,
-        default="/www/assets/managed",
+        default="/data/managed",
         help="path to managed work directory",
     )
     parser.add_argument(
         "-o",
         "--output",
         type=str,
-        default="/www",
+        default="/data",
         help="path to managed config file output",
     )
     parser.add_argument(
@@ -303,8 +307,14 @@ def parse_arguments() -> argparse.Namespace:
         type=int,
         choices=[0, 1],
         default=1,
-        help="""Verify certificates for HTTPS connections. Certificate verification is strongly
-        advised""",
+        help="verify certificates for HTTPS connections",
+    )
+    parser.add_argument(
+        "--debug",
+        type=int,
+        choices=[0, 1],
+        default=0,
+        help="enable or disable debug mode",
     )
 
     args: argparse.Namespace = parser.parse_args()
@@ -343,20 +353,27 @@ def test_url_is_image(url: str, timeout_seconds: float, verify_ssl: bool) -> boo
 
 
 def main() -> None:
+    args: argparse.Namespace = parse_arguments()
+
+    if bool(args.debug):
+        log_level: int = logging.DEBUG
+    else:
+        log_level: int = logging.INFO
+
     logging.basicConfig(
-        level=logging.INFO,
+        level=log_level,
         format="%(asctime)s %(levelname)s: %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 
     killer: GracefulKiller = GracefulKiller()
 
-    args: argparse.Namespace = parse_arguments()
-
-    logging.info("Using args: %s", args)
+    logging.debug("Using args: %s", args)
 
     if not bool(args.verify_ssl):
+        # spam warnings -> 1 warning
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+        logging.warning("SSL verification disabled, certificate verification is strongly advised")
 
     worker: UpdateWorker = UpdateWorker(args)
     worker.run()

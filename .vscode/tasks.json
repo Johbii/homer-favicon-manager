@@ -1,0 +1,85 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "docker-build",
+            "label": "docker-build",
+            "platform": "python",
+            "dockerBuild": {
+                "tag": "homer-favicon-manager:edge",
+                "dockerfile": "${workspaceFolder}/Dockerfile",
+                "context": "${workspaceFolder}",
+                "pull": true
+            },
+            "presentation": {
+                "close": true
+            }
+        },
+        {
+            "type": "docker-run",
+            "dockerRun": {
+                "volumes": [
+                    {
+                        "containerPath": "/data",
+                        "localPath": "./vol"
+                    }
+                ]
+            },
+            "label": "docker-run: debug",
+            "promptOnClose": true,
+            "dependsOn": [
+                "docker-build"
+            ],
+            "python": {
+                "file": "app.py",
+                "args": [
+                    "--debug=1",
+                    "--verify-ssl=0"
+                ]
+            },
+            "presentation": {
+                "close": true
+            }
+        },
+        {
+            "type": "docker-compose",
+            "label": "docker-compose up: debug",
+            "dockerCompose": {
+                "up": {
+                    "detached": true,
+                    "build": true,
+                    "services": [
+                        "favicon-manager",
+                        "homer"
+                    ],
+                    "customOptions": "--force-recreate"
+                },
+                "files": [
+                    "${workspaceFolder}/docker-compose.debug.yml"
+                ]
+            },
+            "presentation": {
+                "close": true
+            }
+        },
+        {
+            "type": "docker-compose",
+            "label": "docker-compose down",
+            "dockerCompose": {
+                "down": {},
+                "files": [
+                    "${workspaceFolder}/docker-compose.debug.yml"
+                ]
+            },
+            "presentation": {
+                "close": true
+            }
+        },
+        {
+            "type": "shell",
+            "label": "wait for debug",
+            "dependsOn": "docker-compose up: debug",
+            "command": "sleep 5"
+        }
+    ]
+}

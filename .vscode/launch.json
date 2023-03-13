@@ -1,0 +1,38 @@
+{
+    "configurations": [
+        {
+            "name": "Debug: docker-compose",
+            "type": "python",
+            "request": "attach",
+            "preLaunchTask": "wait for debug",
+            "postDebugTask": "docker-compose down",
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}",
+                    "remoteRoot": "."
+                }
+            ],
+            "justMyCode": true,
+            "internalConsoleOptions": "openOnSessionStart",
+            "connect": {
+                "host": "127.0.0.1",
+                "port": 5678
+            }
+        },
+        {
+            "name": "Debug: docker",
+            "type": "docker",
+            "request": "launch",
+            "preLaunchTask": "docker-run: debug",
+            "python": {
+                "pathMappings": [
+                    {
+                        "localRoot": "${workspaceFolder}",
+                        "remoteRoot": "/usr/src/app"
+                    }
+                ],
+                "projectType": "general"
+            }
+        }
+    ]
+}
