@@ -1,4 +1,4 @@
-# Homer Favicon Manager
+# Homer Icon Manager
 Python script/daemon to automatically download favicons for services in [Homer](https://github.com/bastienwirtz/homer) config files.
 
 
