@@ -5,7 +5,6 @@ import logging
 import os
 import re
 import signal
-import sys
 import threading
 import time
 
@@ -379,7 +378,7 @@ def main() -> None:
     worker.run()
 
     if not bool(args.daemon):
-        sys.exit()
+        return
 
     watch_paths: list[str | str] = [args.config, os.path.dirname(args.config)]
 
